@@ -1,16 +1,36 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Calendar, Plus, Edit, X } from "lucide-react";
+import { ArrowLeft, Calendar, Plus, Edit, User, Eye, EyeOff, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { NewPostModal } from "@/components/NewPostModal";
+import { PostDetailModal } from "@/components/PostDetailModal";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+interface PostAuthor {
+  full_name: string | null;
+  avatar_url: string | null;
+  handle: string | null;
+}
 
 interface DiscoverPost {
   id: string;
@@ -19,6 +39,8 @@ interface DiscoverPost {
   image_url: string | null;
   created_at: string;
   author_id: string;
+  published: boolean;
+  author?: PostAuthor;
 }
 
 const Discover = () => {
@@ -27,12 +49,14 @@ const Discover = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showNewPostModal, setShowNewPostModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<DiscoverPost | null>(null);
   const [editingPost, setEditingPost] = useState<DiscoverPost | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editImageUrl, setEditImageUrl] = useState("");
+  const [deletePostId, setDeletePostId] = useState<string | null>(null);
 
   useEffect(() => {
     loadPosts();
@@ -43,6 +67,7 @@ const Discover = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       setIsAuthenticated(!!user);
+      setCurrentUserId(user?.id || null);
       
       if (!user) return;
 
@@ -61,14 +86,39 @@ const Discover = () => {
 
   const loadPosts = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let query = supabase
         .from("discover_posts")
         .select("*")
-        .eq("published", true)
         .order("created_at", { ascending: false });
 
+      // If user is logged in, show their private posts too
+      if (user) {
+        query = query.or(`published.eq.true,author_id.eq.${user.id}`);
+      } else {
+        query = query.eq("published", true);
+      }
+
+      const { data: postsData, error } = await query;
+
       if (error) throw error;
-      setPosts(data || []);
+
+      // Fetch author profiles
+      const authorIds = [...new Set(postsData?.map(p => p.author_id) || [])];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, handle")
+        .in("id", authorIds);
+
+      const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+      const postsWithAuthors = postsData?.map(post => ({
+        ...post,
+        author: profilesMap.get(post.author_id) || null,
+      })) || [];
+
+      setPosts(postsWithAuthors);
     } catch (error: any) {
       toast.error("Failed to load posts");
       console.error("Error loading posts:", error);
@@ -131,12 +181,55 @@ const Discover = () => {
     }
   };
 
+  const handleDeletePost = async () => {
+    if (!deletePostId) return;
+
+    try {
+      const { error } = await supabase
+        .from("discover_posts")
+        .delete()
+        .eq("id", deletePostId);
+
+      if (error) throw error;
+
+      toast.success("Post deleted successfully!");
+      setDeletePostId(null);
+      setSelectedPost(null);
+      loadPosts();
+    } catch (error: any) {
+      toast.error("Failed to delete post");
+      console.error("Error deleting post:", error);
+    }
+  };
+
+  const handleToggleVisibility = async (post: DiscoverPost) => {
+    try {
+      const { error } = await supabase
+        .from("discover_posts")
+        .update({ published: !post.published })
+        .eq("id", post.id);
+
+      if (error) throw error;
+
+      toast.success(post.published ? "Post is now private" : "Post is now public");
+      setSelectedPost(null);
+      loadPosts();
+    } catch (error: any) {
+      toast.error("Failed to update visibility");
+      console.error("Error updating visibility:", error);
+    }
+  };
+
   const openEditModal = (post: DiscoverPost) => {
     setEditTitle(post.title);
     setEditContent(post.content);
     setEditImageUrl(post.image_url || "");
     setEditingPost(post);
     setSelectedPost(null);
+  };
+
+  const isPostOwner = (post: DiscoverPost) => {
+    return currentUserId === post.author_id || isAdmin;
   };
 
   return (
@@ -187,9 +280,19 @@ const Discover = () => {
                 transition={{ delay: index * 0.1 }}
               >
                 <Card 
-                  className="h-full bg-card/50 backdrop-blur border-border/50 hover:border-primary/50 transition-all cursor-pointer"
+                  className={`h-full bg-card/50 backdrop-blur border-border/50 hover:border-primary/50 transition-all cursor-pointer relative ${
+                    !post.published ? "opacity-70 border-dashed" : ""
+                  }`}
                   onClick={() => setSelectedPost(post)}
                 >
+                  {!post.published && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground text-xs flex items-center gap-1">
+                        <EyeOff className="h-3 w-3" />
+                        Private
+                      </span>
+                    </div>
+                  )}
                   {post.image_url && (
                     <div className="w-full h-48 overflow-hidden rounded-t-lg">
                       <img
@@ -200,6 +303,24 @@ const Discover = () => {
                     </div>
                   )}
                   <CardHeader>
+                    {/* Author avatar */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <Avatar className="h-6 w-6">
+                        {post.author?.avatar_url ? (
+                          <AvatarImage src={post.author.avatar_url} alt={post.author.full_name || "Author"} />
+                        ) : (
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                            {post.author?.full_name?.[0]?.toUpperCase() || <User className="h-3 w-3" />}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <span className="text-sm text-muted-foreground">
+                        {post.author?.full_name || "Unknown"}
+                        {post.author?.handle && (
+                          <span className="text-primary ml-1">@{post.author.handle}</span>
+                        )}
+                      </span>
+                    </div>
                     <CardTitle className="text-foreground">{post.title}</CardTitle>
                     <CardDescription className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="h-4 w-4" />
@@ -207,7 +328,11 @@ const Discover = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-foreground/80 line-clamp-3">{post.content}</p>
+                    <div className="text-foreground/80 line-clamp-3 prose prose-sm prose-invert">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {post.content.substring(0, 150)}
+                      </ReactMarkdown>
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -217,46 +342,32 @@ const Discover = () => {
       </main>
 
       {/* Post Detail Modal */}
-      <Dialog open={!!selectedPost} onOpenChange={(open) => !open && setSelectedPost(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          {selectedPost && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center justify-between">
-                  <DialogTitle className="text-2xl">{selectedPost.title}</DialogTitle>
-                  {isAdmin && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEditModal(selectedPost)}
-                      className="gap-2"
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </Button>
-                  )}
-                </div>
-                <DialogDescription className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  {format(new Date(selectedPost.created_at), "MMMM dd, yyyy")}
-                </DialogDescription>
-              </DialogHeader>
-              {selectedPost.image_url && (
-                <div className="w-full rounded-lg overflow-hidden my-4">
-                  <img
-                    src={selectedPost.image_url}
-                    alt={selectedPost.title}
-                    className="w-full h-auto object-cover"
-                  />
-                </div>
-              )}
-              <div className="prose prose-invert max-w-none">
-                <p className="text-foreground whitespace-pre-wrap">{selectedPost.content}</p>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <PostDetailModal
+        post={selectedPost}
+        open={!!selectedPost}
+        onClose={() => setSelectedPost(null)}
+        isOwner={selectedPost ? isPostOwner(selectedPost) : false}
+        onDelete={() => selectedPost && setDeletePostId(selectedPost.id)}
+        onToggleVisibility={() => selectedPost && handleToggleVisibility(selectedPost)}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Post</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Post Modal */}
       <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
@@ -283,7 +394,7 @@ const Discover = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Content</label>
+              <label className="text-sm font-medium">Content (supports **bold** and `code`)</label>
               <Textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}

@@ -43,11 +43,13 @@ export const Sidebar = memo(({
 }: SidebarProps) => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [unreadPostsCount, setUnreadPostsCount] = useState(0);
 
-  // Check if user is admin
+  // Check if user is admin and count unread posts
   useEffect(() => {
     if (!isAuthenticated) {
       setIsAdmin(false);
+      setUnreadPostsCount(0);
       return;
     }
 
@@ -69,7 +71,33 @@ export const Sidebar = memo(({
       }
     };
 
+    const checkUnreadPosts = () => {
+      try {
+        const seenPosts = JSON.parse(localStorage.getItem('seen_posts') || '[]');
+        const lastVisit = localStorage.getItem('last_discover_visit');
+        
+        // Fetch posts and count unseen ones
+        supabase
+          .from('discover_posts')
+          .select('id, created_at')
+          .eq('published', true)
+          .order('created_at', { ascending: false })
+          .then(({ data: posts }) => {
+            if (posts) {
+              const unread = posts.filter(post => 
+                !seenPosts.includes(post.id) && 
+                (!lastVisit || new Date(post.created_at) > new Date(lastVisit))
+              ).length;
+              setUnreadPostsCount(unread);
+            }
+          });
+      } catch (error) {
+        console.error('Error checking unread posts:', error);
+      }
+    };
+
     checkAdminRole();
+    checkUnreadPosts();
   }, [isAuthenticated]);
 
   const handleSignOut = async () => {
@@ -80,6 +108,13 @@ export const Sidebar = memo(({
     } catch (error: any) {
       toast.error(error.message || "Failed to sign out");
     }
+  };
+
+  const handleDiscoverClick = () => {
+    // Mark visit time to reset unread count
+    localStorage.setItem('last_discover_visit', new Date().toISOString());
+    setUnreadPostsCount(0);
+    navigate("/discover");
   };
 
   if (!isOpen) return null;
@@ -139,12 +174,17 @@ export const Sidebar = memo(({
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button
               variant="ghost"
-              onClick={() => navigate("/discover")}
+              onClick={handleDiscoverClick}
               className="w-full justify-start gap-3 hover:bg-sidebar-accent hover:text-primary transition-all"
               title="Discover"
             >
               <Compass className="h-5 w-5" />
               <span>Discover</span>
+              {unreadPostsCount > 0 && (
+                <Badge variant="destructive" className="ml-auto text-xs h-5 w-5 p-0 flex items-center justify-center rounded-full">
+                  {unreadPostsCount}
+                </Badge>
+              )}
             </Button>
           </motion.div>
 
