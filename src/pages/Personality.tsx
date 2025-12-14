@@ -90,8 +90,34 @@ const Personality = () => {
     }
   };
 
+  // Blocked jailbreak/DAN patterns
+  const BLOCKED_PATTERNS = [
+    /\bdan\b/i,
+    /\bjailbreak\b/i,
+    /\bignore.*instructions\b/i,
+    /\bpretend.*no.*rules\b/i,
+    /\bdo.*anything.*now\b/i,
+    /\bbypass.*restrictions\b/i,
+    /\broleplay.*evil\b/i,
+    /\bact.*without.*limits\b/i,
+    /\bdisregard.*previous\b/i,
+    /\bforget.*rules\b/i,
+    /\bno.*ethical\b/i,
+    /\bno.*moral\b/i,
+  ];
+
+  const containsBlockedContent = (text: string): boolean => {
+    return BLOCKED_PATTERNS.some(pattern => pattern.test(text));
+  };
+
   const handleSave = async () => {
     if (!user) return;
+
+    // Check for jailbreak attempts
+    if (containsBlockedContent(customInstructions)) {
+      toast.error("Your custom instructions contain content that violates DETA AI guidelines. Please remove any jailbreak or DAN-related prompts.");
+      return;
+    }
 
     setSaving(true);
     try {
