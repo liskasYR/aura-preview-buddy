@@ -347,6 +347,7 @@ const Discover = () => {
         open={!!selectedPost}
         onClose={() => setSelectedPost(null)}
         isOwner={selectedPost ? isPostOwner(selectedPost) : false}
+        onEdit={() => selectedPost && openEditModal(selectedPost)}
         onDelete={() => selectedPost && setDeletePostId(selectedPost.id)}
         onToggleVisibility={() => selectedPost && handleToggleVisibility(selectedPost)}
       />
