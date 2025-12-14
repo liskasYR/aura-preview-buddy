@@ -1,7 +1,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Calendar, Clock, User, Trash2, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, User, Trash2, Eye, EyeOff, Edit } from "lucide-react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -26,6 +26,7 @@ interface PostDetailModalProps {
   open: boolean;
   onClose: () => void;
   isOwner: boolean;
+  onEdit?: () => void;
   onDelete?: () => void;
   onToggleVisibility?: () => void;
 }
@@ -35,6 +36,7 @@ export const PostDetailModal = ({
   open,
   onClose,
   isOwner,
+  onEdit,
   onDelete,
   onToggleVisibility,
 }: PostDetailModalProps) => {
@@ -95,6 +97,15 @@ export const PostDetailModal = ({
             {/* Owner actions */}
             {isOwner && (
               <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onEdit}
+                  className="gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
