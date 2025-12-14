@@ -65,7 +65,7 @@ export const NewPostNotification = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm"
           onClick={handleClose}
         >
           <motion.div
@@ -73,19 +73,19 @@ export const NewPostNotification = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border/50 bg-card shadow-2xl"
+            className="relative flex w-full max-w-2xl overflow-hidden rounded-2xl border border-border/30 bg-card/95 shadow-2xl backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
+            {/* Close button - X at top right */}
             <button
               onClick={handleClose}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted/50 transition-colors z-10"
+              className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-muted/50 transition-colors z-10 bg-background/50"
             >
-              <X className="h-5 w-5 text-muted-foreground" />
+              <X className="h-4 w-4 text-muted-foreground" />
             </button>
 
-            {/* Header image or gradient */}
-            <div className="relative h-48 overflow-hidden">
+            {/* Left side - Image or gradient */}
+            <div className="relative w-1/2 min-h-[280px] overflow-hidden">
               {imageUrl ? (
                 <img
                   src={imageUrl}
@@ -95,47 +95,46 @@ export const NewPostNotification = ({
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
-              
-              {/* New badge overlay */}
-              <div className="absolute top-4 left-4">
-                <motion.span 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", delay: 0.2 }}
-                  className="px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center gap-1.5 shadow-lg"
-                >
-                  <Bell className="h-4 w-4" />
-                  New Post
-                </motion.span>
-              </div>
             </div>
 
-            {/* Content */}
-            <div className="p-6">
-              {/* Sparkle icon */}
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-                <span className="text-sm text-primary font-medium">Just Published</span>
-              </div>
+            {/* Right side - Content */}
+            <div className="flex flex-col justify-center w-1/2 p-6 gap-4">
+              {/* New badge */}
+              <motion.span 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", delay: 0.2 }}
+                className="w-fit px-3 py-1 rounded-full bg-muted text-foreground text-sm font-medium"
+              >
+                New
+              </motion.span>
 
               {/* Title */}
-              <h2 className="text-2xl font-bold text-foreground mb-3 line-clamp-2">
+              <h2 className="text-xl font-bold text-foreground leading-tight line-clamp-3">
                 {title}
               </h2>
 
-              {/* Preview text */}
-              <p className="text-muted-foreground text-base line-clamp-3 mb-6">
-                {preview}
-              </p>
+              {/* Preview with bullet points style */}
+              <div className="space-y-2">
+                {preview.split('\n').slice(0, 4).map((line, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="line-clamp-1">{line || preview.slice(0, 50)}</span>
+                  </div>
+                ))}
+                {!preview.includes('\n') && (
+                  <p className="text-sm text-muted-foreground line-clamp-2">{preview}</p>
+                )}
+              </div>
 
               {/* CTA Button */}
               <Button
                 onClick={handleCheckOut}
-                className="w-full h-12 glow-border justify-center gap-2 group text-lg"
+                variant="outline"
+                className="w-full h-10 justify-center gap-2 group mt-2 bg-background hover:bg-muted"
               >
                 Check it out
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </div>
           </motion.div>
