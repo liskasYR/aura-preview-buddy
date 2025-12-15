@@ -1,7 +1,8 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, User, Calendar, CheckCircle } from "lucide-react";
+import { ArrowLeft, User, Calendar } from "lucide-react";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 
@@ -73,9 +74,7 @@ export const UserProfileModal = ({
                 <h2 className="text-2xl font-bold text-foreground">
                   {profile.full_name || "Unknown User"}
                 </h2>
-                {profile.verified && (
-                  <CheckCircle className="h-5 w-5 text-primary fill-primary/20" />
-                )}
+                {profile.verified && <VerifiedBadge size="lg" />}
               </div>
               {profile.handle && (
                 <p className="text-primary">@{profile.handle}</p>

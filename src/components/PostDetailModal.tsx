@@ -1,7 +1,8 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Calendar, Clock, User, Trash2, Eye, EyeOff, Edit, CheckCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, User, Trash2, Eye, EyeOff, Edit } from "lucide-react";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -95,9 +96,7 @@ export const PostDetailModal = ({
                   <p className="font-semibold text-foreground">
                     {post.author?.full_name || "Unknown Author"}
                   </p>
-                  {post.author?.verified && (
-                    <CheckCircle className="h-4 w-4 text-primary fill-primary/20" />
-                  )}
+                  {post.author?.verified && <VerifiedBadge size="md" />}
                 </div>
                 {post.author?.handle && (
                   <p className="text-sm text-primary">@{post.author.handle}</p>
