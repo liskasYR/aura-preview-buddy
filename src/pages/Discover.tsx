@@ -6,12 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Calendar, Plus, Edit, User, Eye, EyeOff, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, Plus, Edit, User, Eye, EyeOff, Trash2, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { NewPostModal } from "@/components/NewPostModal";
 import { PostDetailModal } from "@/components/PostDetailModal";
+import { UserProfileModal } from "@/components/UserProfileModal";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -30,6 +31,10 @@ interface PostAuthor {
   full_name: string | null;
   avatar_url: string | null;
   handle: string | null;
+  verified?: boolean;
+  bio?: string | null;
+  id?: string;
+  created_at?: string;
 }
 
 interface DiscoverPost {
@@ -57,6 +62,8 @@ const Discover = () => {
   const [editContent, setEditContent] = useState("");
   const [editImageUrl, setEditImageUrl] = useState("");
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
+  const [selectedAuthor, setSelectedAuthor] = useState<PostAuthor | null>(null);
+  const [authorPosts, setAuthorPosts] = useState<DiscoverPost[]>([]);
 
   useEffect(() => {
     loadPosts();
@@ -104,11 +111,11 @@ const Discover = () => {
 
       if (error) throw error;
 
-      // Fetch author profiles
+      // Fetch author profiles with verified and bio
       const authorIds = [...new Set(postsData?.map(p => p.author_id) || [])];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, handle")
+        .select("id, full_name, avatar_url, handle, verified, bio, created_at")
         .in("id", authorIds);
 
       const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -232,6 +239,30 @@ const Discover = () => {
     return currentUserId === post.author_id || isAdmin;
   };
 
+  const openAuthorProfile = async (author: PostAuthor | undefined, authorId: string) => {
+    if (!author) return;
+    
+    // Fetch author's posts
+    const { data: userPosts } = await supabase
+      .from("discover_posts")
+      .select("*")
+      .eq("author_id", authorId)
+      .eq("published", true)
+      .order("created_at", { ascending: false });
+    
+    setAuthorPosts(userPosts || []);
+    setSelectedAuthor({ ...author, id: authorId });
+    setSelectedPost(null);
+  };
+
+  const handleAuthorPostClick = (postId: string) => {
+    const post = posts.find(p => p.id === postId) || authorPosts.find(p => p.id === postId);
+    if (post) {
+      setSelectedAuthor(null);
+      setSelectedPost(post as DiscoverPost);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -314,8 +345,11 @@ const Discover = () => {
                           </AvatarFallback>
                         )}
                       </Avatar>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
                         {post.author?.full_name || "Unknown"}
+                        {post.author?.verified && (
+                          <CheckCircle className="h-3.5 w-3.5 text-primary fill-primary/20" />
+                        )}
                         {post.author?.handle && (
                           <span className="text-primary ml-1">@{post.author.handle}</span>
                         )}
@@ -350,6 +384,29 @@ const Discover = () => {
         onEdit={() => selectedPost && openEditModal(selectedPost)}
         onDelete={() => selectedPost && setDeletePostId(selectedPost.id)}
         onToggleVisibility={() => selectedPost && handleToggleVisibility(selectedPost)}
+        onAuthorClick={() => selectedPost && openAuthorProfile(selectedPost.author, selectedPost.author_id)}
+      />
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        profile={selectedAuthor ? {
+          id: selectedAuthor.id || "",
+          full_name: selectedAuthor.full_name,
+          avatar_url: selectedAuthor.avatar_url,
+          handle: selectedAuthor.handle,
+          bio: selectedAuthor.bio,
+          verified: selectedAuthor.verified,
+          created_at: selectedAuthor.created_at,
+        } : null}
+        posts={authorPosts.map(p => ({
+          id: p.id,
+          title: p.title,
+          image_url: p.image_url,
+          created_at: p.created_at,
+        }))}
+        open={!!selectedAuthor}
+        onClose={() => setSelectedAuthor(null)}
+        onPostClick={handleAuthorPostClick}
       />
 
       {/* Delete Confirmation Dialog */}

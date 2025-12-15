@@ -1,7 +1,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Calendar, Clock, User, Trash2, Eye, EyeOff, Edit } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, User, Trash2, Eye, EyeOff, Edit, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -10,6 +10,7 @@ interface PostAuthor {
   full_name: string | null;
   avatar_url: string | null;
   handle: string | null;
+  verified?: boolean;
 }
 
 interface PostDetailModalProps {
@@ -29,6 +30,7 @@ interface PostDetailModalProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onToggleVisibility?: () => void;
+  onAuthorClick?: () => void;
 }
 
 export const PostDetailModal = ({
@@ -39,6 +41,7 @@ export const PostDetailModal = ({
   onEdit,
   onDelete,
   onToggleVisibility,
+  onAuthorClick,
 }: PostDetailModalProps) => {
   if (!post) return null;
 
@@ -74,7 +77,10 @@ export const PostDetailModal = ({
         <div className="p-6 space-y-6">
           {/* Author info */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div 
+              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={onAuthorClick}
+            >
               <Avatar className="h-12 w-12 border-2 border-primary/20">
                 {post.author?.avatar_url ? (
                   <AvatarImage src={post.author.avatar_url} alt={post.author.full_name || "Author"} />
@@ -85,9 +91,14 @@ export const PostDetailModal = ({
                 )}
               </Avatar>
               <div>
-                <p className="font-semibold text-foreground">
-                  {post.author?.full_name || "Unknown Author"}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-semibold text-foreground">
+                    {post.author?.full_name || "Unknown Author"}
+                  </p>
+                  {post.author?.verified && (
+                    <CheckCircle className="h-4 w-4 text-primary fill-primary/20" />
+                  )}
+                </div>
                 {post.author?.handle && (
                   <p className="text-sm text-primary">@{post.author.handle}</p>
                 )}
