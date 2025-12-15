@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { ArrowLeft, User, Mail, Save, Camera, AtSign } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import backgroundImage from "@/assets/background.png";
 import { z } from "zod";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -23,6 +24,7 @@ export default function Profile() {
     email: "",
     avatar_url: "",
     handle: "",
+    bio: "",
   });
   const [usageStats, setUsageStats] = useState({
     totalConversations: 0,
@@ -57,6 +59,7 @@ export default function Profile() {
           email: profileData.email || currentUser.email || "",
           avatar_url: profileData.avatar_url || "",
           handle: profileData.handle || "",
+          bio: profileData.bio || "",
         });
       }
 
@@ -155,11 +158,17 @@ export default function Profile() {
           .regex(/^[a-zA-Z0-9_]*$/, "Handle can only contain letters, numbers, and underscores")
           .optional()
           .or(z.literal("")),
+        bio: z.string()
+          .trim()
+          .max(500, "Bio must be less than 500 characters")
+          .optional()
+          .or(z.literal("")),
       });
 
       const validated = profileSchema.parse({ 
         full_name: profile.full_name,
         handle: profile.handle,
+        bio: profile.bio,
       });
 
       const { error } = await supabase
@@ -167,6 +176,7 @@ export default function Profile() {
         .update({
           full_name: validated.full_name,
           handle: validated.handle || null,
+          bio: validated.bio || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
@@ -295,6 +305,21 @@ export default function Profile() {
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
                       Letters, numbers, and underscores only
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      value={profile.bio}
+                      onChange={(e) =>
+                        setProfile({ ...profile, bio: e.target.value })
+                      }
+                      placeholder="Tell us about yourself..."
+                      className="mt-2 min-h-[100px]"
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Max 500 characters
                     </p>
                   </div>
                   <div>

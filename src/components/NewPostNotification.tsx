@@ -9,6 +9,7 @@ interface NewPostNotificationProps {
   preview: string;
   imageUrl?: string | null;
   postId?: string;
+  index?: number; // For stacking notifications
   onClose: () => void;
 }
 
@@ -39,6 +40,7 @@ export const NewPostNotification = ({
   preview,
   imageUrl,
   postId,
+  index = 0,
   onClose,
 }: NewPostNotificationProps) => {
   const navigate = useNavigate();
@@ -70,10 +72,11 @@ export const NewPostNotification = ({
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            animate={{ opacity: 1, scale: 1, y: index * 60 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="relative flex w-full max-w-2xl overflow-hidden rounded-2xl border border-border/30 bg-card/95 shadow-2xl backdrop-blur-xl"
+            style={{ marginTop: index * 20 }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button - X at top right */}
