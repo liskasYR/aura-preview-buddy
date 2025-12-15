@@ -47,13 +47,32 @@ export default function Profile() {
 
       setUser(currentUser);
 
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", currentUser.id)
         .single();
 
-      if (profileData) {
+      if (profileError && profileError.code === "PGRST116") {
+        // Profile doesn't exist, create one
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert({
+            id: currentUser.id,
+            email: currentUser.email,
+            full_name: currentUser.user_metadata?.full_name || currentUser.email,
+          });
+
+        if (!insertError) {
+          setProfile({
+            full_name: currentUser.user_metadata?.full_name || currentUser.email || "",
+            email: currentUser.email || "",
+            avatar_url: "",
+            handle: "",
+            bio: "",
+          });
+        }
+      } else if (profileData) {
         setProfile({
           full_name: profileData.full_name || "",
           email: profileData.email || currentUser.email || "",
