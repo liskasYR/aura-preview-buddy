@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Calendar, Plus, Edit, User, Eye, EyeOff, Trash2, CheckCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Plus, Edit, User, Eye, EyeOff, Trash2 } from "lucide-react";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -345,11 +346,9 @@ const Discover = () => {
                           </AvatarFallback>
                         )}
                       </Avatar>
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                      <span className="text-sm text-muted-foreground flex items-center gap-1.5">
                         {post.author?.full_name || "Unknown"}
-                        {post.author?.verified && (
-                          <CheckCircle className="h-3.5 w-3.5 text-primary fill-primary/20" />
-                        )}
+                        {post.author?.verified && <VerifiedBadge size="sm" />}
                         {post.author?.handle && (
                           <span className="text-primary ml-1">@{post.author.handle}</span>
                         )}
