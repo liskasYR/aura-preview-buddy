@@ -131,7 +131,7 @@ export const ChatMessage = ({ message, index = 0 }: ChatMessageProps) => {
                   src={img}
                   alt={`Uploaded ${idx + 1}`}
                   whileHover={{ scale: 1.02 }}
-                  className="rounded-lg md:rounded-xl max-w-full border border-muted/50"
+                  className="rounded-lg md:rounded-xl max-w-[200px] md:max-w-[280px] max-h-[200px] md:max-h-[280px] object-cover border border-muted/50"
                 />
               </motion.div>
             ))}
@@ -174,7 +174,7 @@ export const ChatMessage = ({ message, index = 0 }: ChatMessageProps) => {
                   animate={{ opacity: 1, filter: "blur(0px) brightness(1)" }}
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.8, delay: idx * 0.2 + 0.3 }}
-                  className="relative rounded-lg md:rounded-xl max-w-full border border-primary/40 md:border-2 shadow-neon"
+                  className="relative rounded-lg md:rounded-xl max-w-[200px] md:max-w-[320px] max-h-[200px] md:max-h-[320px] object-contain border border-primary/40 md:border-2 shadow-neon"
                 />
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
