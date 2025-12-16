@@ -335,7 +335,74 @@ Always maintain these standards in your responses! 🚀`;
       lastMessage: apiMessages[apiMessages.length - 1]?.content?.substring?.(0, 100) || 'multimodal'
     });
 
-    // Call Lovable AI Gateway
+    // If user wants image generation, use the image model
+    if (autoGenerateImage) {
+      console.log("Image generation/editing requested - using gemini image model");
+      
+      const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-image-preview",
+          messages: apiMessages,
+          modalities: ["image", "text"]
+        }),
+      });
+
+      if (!imageResponse.ok) {
+        const errorText = await imageResponse.text();
+        console.error("Image generation error:", imageResponse.status, errorText);
+        return new Response(
+          JSON.stringify({ error: `שגיאה ביצירת תמונה: ${errorText.substring(0, 200)}` }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const imageData = await imageResponse.json();
+      console.log("Image generation response:", JSON.stringify(imageData).substring(0, 500));
+      
+      const textContent = imageData.choices?.[0]?.message?.content || "הנה התמונה שיצרתי עבורך!";
+      const generatedImages = imageData.choices?.[0]?.message?.images || [];
+      
+      // Build SSE response with text and images
+      const encoder = new TextEncoder();
+      const sseStream = new ReadableStream({
+        start(controller) {
+          // Send sources first if available
+          if (searchSources.length > 0) {
+            const sourcesData = JSON.stringify({ sources: searchSources });
+            controller.enqueue(encoder.encode(`data: ${sourcesData}\n\n`));
+          }
+          
+          // Send text content
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+            choices: [{ delta: { content: textContent } }]
+          })}\n\n`));
+          
+          // Send generated images
+          if (generatedImages.length > 0) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              choices: [{ delta: { images: generatedImages } }]
+            })}\n\n`));
+          }
+          
+          controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+          controller.close();
+        }
+      });
+
+      return new Response(sseStream, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
+
+    // Regular text chat - Call Lovable AI Gateway
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {

@@ -31,7 +31,8 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-  images?: string[];
+  images?: string[]; // User uploaded images
+  generatedImages?: string[]; // AI generated images
   isTyping?: boolean;
   sources?: Array<{ title: string; link: string; snippet: string }>;
 }
@@ -449,13 +450,18 @@ export const Chat = () => {
       
       if (error) throw error;
       
-      const loadedMessages: Message[] = messagesData.map(msg => ({
-        id: msg.id,
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-        timestamp: new Date(msg.created_at || Date.now()),
-        images: (msg as any).image_urls || undefined,
-      }));
+      const loadedMessages: Message[] = messagesData.map(msg => {
+        const imageUrls = (msg as any).image_urls || undefined;
+        return {
+          id: msg.id,
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+          timestamp: new Date(msg.created_at || Date.now()),
+          // User messages have images, assistant messages have generatedImages
+          images: msg.role === 'user' ? imageUrls : undefined,
+          generatedImages: msg.role === 'assistant' ? imageUrls : undefined,
+        };
+      });
       
       setCurrentConversationId(conversationId);
       setMessages(loadedMessages);
@@ -469,6 +475,11 @@ export const Chat = () => {
     if (!currentConversationId || !user) return;
     
     try {
+      // Determine which image array to save based on role
+      const imageUrls = message.role === 'user' 
+        ? (message.images || null)
+        : (message.generatedImages || null);
+      
       // Save message to database
       const { error: msgError } = await supabase
         .from('messages')
@@ -476,7 +487,7 @@ export const Chat = () => {
           conversation_id: currentConversationId,
           role: message.role,
           content: message.content,
-          image_urls: message.images || null
+          image_urls: imageUrls
         } as any);
       
       if (msgError) throw msgError;
@@ -614,7 +625,7 @@ export const Chat = () => {
     abortControllerRef.current = new AbortController();
 
     let assistantContent = "";
-    const assistantImages: string[] = [];
+    const assistantGeneratedImages: string[] = [];
     let assistantSources: Array<{ title: string; link: string; snippet: string }> = [];
 
     const upsertAssistant = (chunk: string) => {
@@ -624,13 +635,13 @@ export const Chat = () => {
         if (last?.role === "assistant") {
           return prev.map((m, i) =>
             i === prev.length - 1
-              ? { ...m, content: assistantContent, images: assistantImages, sources: assistantSources }
+              ? { ...m, content: assistantContent, generatedImages: assistantGeneratedImages, sources: assistantSources }
               : m
           );
         }
         return [
           ...prev,
-          { id: Date.now().toString(), role: "assistant", content: assistantContent, timestamp: new Date(), images: assistantImages, sources: assistantSources }
+          { id: Date.now().toString(), role: "assistant", content: assistantContent, timestamp: new Date(), generatedImages: assistantGeneratedImages, sources: assistantSources }
         ];
       });
     };
@@ -647,11 +658,11 @@ export const Chat = () => {
         onDelta: upsertAssistant,
         onImage: async (imgUrl) => {
           // No restrictions - everyone can generate unlimited images
-          assistantImages.push(imgUrl);
+          assistantGeneratedImages.push(imgUrl);
           setMessages(prev => {
             const last = prev[prev.length - 1];
             if (last?.role === "assistant") {
-              return prev.map((m, i) => i === prev.length - 1 ? { ...m, images: [...assistantImages] } : m);
+              return prev.map((m, i) => i === prev.length - 1 ? { ...m, generatedImages: [...assistantGeneratedImages] } : m);
             }
             return prev;
           });
@@ -685,7 +696,7 @@ export const Chat = () => {
           setDetaStatus(null);
           abortControllerRef.current = null;
           if (user) {
-            await saveMessage({ id: Date.now().toString(), role: "assistant", content: assistantContent, timestamp: new Date(), images: assistantImages.length ? assistantImages : undefined, sources: assistantSources.length ? assistantSources : undefined });
+            await saveMessage({ id: Date.now().toString(), role: "assistant", content: assistantContent, timestamp: new Date(), generatedImages: assistantGeneratedImages.length ? assistantGeneratedImages : undefined, sources: assistantSources.length ? assistantSources : undefined });
           }
         },
         onError: (error) => {
