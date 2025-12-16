@@ -382,6 +382,42 @@ export const Chat = () => {
   }, [navigate]);
 
 
+  const handleClearChat = async () => {
+    if (messages.length === 0) return;
+    
+    // Clear local state
+    setMessages([]);
+    setInput("");
+    setUploadedImages([]);
+    
+    // If logged in, delete current conversation and create new one
+    if (user && currentConversationId) {
+      try {
+        // Delete all messages in current conversation
+        await supabase
+          .from('messages')
+          .delete()
+          .eq('conversation_id', currentConversationId);
+        
+        // Delete the conversation itself
+        await supabase
+          .from('conversations')
+          .delete()
+          .eq('id', currentConversationId);
+        
+        // Create a new conversation
+        await createNewConversation();
+        toast.success("Chat cleared");
+      } catch (error) {
+        console.error('Error clearing chat:', error);
+        toast.error("Failed to clear chat");
+      }
+    } else {
+      toast.success("Chat cleared");
+    }
+  };
+
+
   // Set status animation once based on input - no rotation
   useEffect(() => {
     if (!isLoading) return;
@@ -1271,6 +1307,18 @@ export const Chat = () => {
             )}
             <div className="relative flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-2xl glass glow-border shadow-neon">
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
+              {messages.length > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleClearChat}
+                  disabled={isLoading}
+                  className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0 text-muted-foreground hover:text-destructive"
+                  title="Clear chat"
+                >
+                  <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
+                </Button>
+              )}
               <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploadingImages} className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0">
                 {isUploadingImages ? (
                   <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
