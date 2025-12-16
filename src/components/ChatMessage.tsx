@@ -11,6 +11,7 @@ interface Message {
   content: string;
   timestamp: Date;
   images?: string[];
+  generatedImages?: string[]; // AI-generated images
   isTyping?: boolean;
   sources?: Array<{ title: string; link: string; snippet: string }>;
 }
@@ -110,6 +111,7 @@ export const ChatMessage = ({ message, index = 0 }: ChatMessageProps) => {
           )}
         </div>
         
+        {/* User uploaded images - no watermark */}
         {message.images && message.images.length > 0 && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -118,6 +120,33 @@ export const ChatMessage = ({ message, index = 0 }: ChatMessageProps) => {
             className="mt-3 md:mt-4 space-y-2 md:space-y-3"
           >
             {message.images.map((img, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: idx * 0.1 }}
+                className="relative group"
+              >
+                <motion.img
+                  src={img}
+                  alt={`Uploaded ${idx + 1}`}
+                  whileHover={{ scale: 1.02 }}
+                  className="rounded-lg md:rounded-xl max-w-full border border-muted/50"
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
+        {/* AI Generated images - with watermark */}
+        {message.generatedImages && message.generatedImages.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-3 md:mt-4 space-y-2 md:space-y-3"
+          >
+            {message.generatedImages.map((img, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, scale: 0.5, rotateY: -90 }}
