@@ -6,7 +6,7 @@ import detaLogo from "@/assets/deta-logo.png";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Zap, Send, Paperclip, Mic, X, Square, Code2, Search, Image as ImageIcon, Brain, BookOpen, Lightbulb, RefreshCw, Trash2, MicOff, Menu, Copy, Sparkles } from "lucide-react";
+import { Zap, Send, Mic, X, Square, Code2, Search, Image as ImageIcon, Brain, BookOpen, Lightbulb, RefreshCw, Trash2, MicOff, Menu, Copy, Sparkles, Plus, Telescope } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
 import { streamChat } from "@/lib/streamChat";
 import { toast } from "sonner";
@@ -25,6 +25,12 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Message {
   id: string;
@@ -129,6 +135,26 @@ const getSavedModel = (): string => {
 
 const saveModel = (model: string) => {
   localStorage.setItem('selected_model', model);
+};
+
+// Blocked jailbreak/DAN patterns (same as Personality.tsx)
+const BLOCKED_PATTERNS = [
+  /\bdan\b/i,
+  /\bjailbreak\b/i,
+  /\bignore.*instructions\b/i,
+  /\bpretend.*no.*rules\b/i,
+  /\bdo.*anything.*now\b/i,
+  /\bbypass.*restrictions\b/i,
+  /\broleplay.*evil\b/i,
+  /\bact.*without.*limits\b/i,
+  /\bdisregard.*previous\b/i,
+  /\bforget.*rules\b/i,
+  /\bno.*ethical\b/i,
+  /\bno.*moral\b/i,
+];
+
+const containsBlockedContent = (text: string): boolean => {
+  return BLOCKED_PATTERNS.some(pattern => pattern.test(text));
 };
 
 export const Chat = () => {
@@ -609,6 +635,12 @@ export const Chat = () => {
 
   const handleSend = async () => {
     if ((!input.trim() && uploadedImages.length === 0) || isLoading) return;
+    
+    // Block DAN/jailbreak attempts
+    if (containsBlockedContent(input)) {
+      toast.error("ההודעה שלך מכילה תוכן שמפר את מדיניות DETA AI. אנא הסר כל ניסיון jailbreak או DAN.");
+      return;
+    }
     
     // Check rate limit for anonymous users
     if (!user) {
@@ -1141,6 +1173,7 @@ export const Chat = () => {
                   <SelectItem value="LPT-3">LPT-3 🌐</SelectItem>
                   <SelectItem value="LPT-3.5">LPT-3.5 🚀</SelectItem>
                   <SelectItem value="LPT-4">LPT-4 ✨</SelectItem>
+                  <SelectItem value="Gemini-3-Pro">Gemini 3 Pro 🔮</SelectItem>
                   <SelectItem value="LPT-4.5" className="text-muted-foreground">
                     <span className="flex items-center gap-2">
                       LPT-4.5 
@@ -1174,7 +1207,7 @@ export const Chat = () => {
                   <motion.div animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }} transition={{ duration: 4, repeat: Infinity }} className="mb-8">
                     <img src={detaLogo} alt="Deta Logo" className="h-20 w-20 shadow-neon" />
                   </motion.div>
-                  <motion.h1 className="text-3xl md:text-5xl font-bold mb-6 md:mb-8 bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent px-4 md:px-0">
+                  <motion.h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-6 md:mb-8 bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent px-2 md:px-0 leading-tight">
                     Where should we begin?
                   </motion.h1>
                   <div className="mt-6 md:mt-8 space-y-3 max-w-2xl px-4 md:px-0">
@@ -1319,15 +1352,37 @@ export const Chat = () => {
                   <Trash2 className="h-4 w-4 md:h-5 md:w-5" />
                 </Button>
               )}
-              <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploadingImages} className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0">
-                {isUploadingImages ? (
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-                    <Paperclip className="h-4 w-4 md:h-5 md:w-5" />
-                  </motion.div>
-                ) : (
-                  <Paperclip className="h-4 w-4 md:h-5 md:w-5" />
-                )}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" disabled={isUploadingImages} className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0">
+                    {isUploadingImages ? (
+                      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                        <Plus className="h-4 w-4 md:h-5 md:w-5" />
+                      </motion.div>
+                    ) : (
+                      <Plus className="h-4 w-4 md:h-5 md:w-5" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48 glass glow-border">
+                  <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 cursor-pointer">
+                    <ImageIcon className="h-4 w-4" />
+                    <span>Add photos & files</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setInput(prev => prev + (prev ? " " : "") + "Create an image of ")} className="flex items-center gap-2 cursor-pointer">
+                    <Sparkles className="h-4 w-4" />
+                    <span>Create image</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setInput(prev => prev + (prev ? " " : "") + "Think deeply about ")} className="flex items-center gap-2 cursor-pointer">
+                    <Brain className="h-4 w-4" />
+                    <span>Thinking</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setInput(prev => prev + (prev ? " " : "") + "Do a deep research about ")} className="flex items-center gap-2 cursor-pointer">
+                    <Telescope className="h-4 w-4" />
+                    <span>Deep research</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Textarea
                 ref={textareaRef}
                 value={input}
