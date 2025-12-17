@@ -1177,12 +1177,6 @@ export const Chat = () => {
                   <SelectItem value="LPT-5">LPT-5 🚀✨</SelectItem>
                 </SelectContent>
               </Select>
-              {/* Model cooldown indicator for anonymous users */}
-              {!user && modelChangeCooldown && modelChangeCooldown > 0 && (
-                <span className="text-xs text-muted-foreground hidden md:inline">
-                  {Math.ceil(modelChangeCooldown / (1000 * 60))}m
-                </span>
-              )}
             </div>
           </div>
         </motion.header>
@@ -1303,6 +1297,12 @@ export const Chat = () => {
                 {selectedModel === 'LPT-4' && lpt4TimeRemaining && (
                   <span className="text-xs text-primary font-medium">
                     Started • LPT-4: {lpt4TimeRemaining}
+                  </span>
+                )}
+                {/* Model change cooldown indicator */}
+                {modelChangeCooldown && modelChangeCooldown > 0 && (
+                  <span className="text-xs text-primary font-medium">
+                    Model change: {Math.ceil(modelChangeCooldown / (1000 * 60))}m remaining
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground">
