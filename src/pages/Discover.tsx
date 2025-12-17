@@ -257,11 +257,8 @@ const Discover = () => {
   };
 
   const handleAuthorPostClick = (postId: string) => {
-    const post = posts.find(p => p.id === postId) || authorPosts.find(p => p.id === postId);
-    if (post) {
-      setSelectedAuthor(null);
-      setSelectedPost(post as DiscoverPost);
-    }
+    setSelectedAuthor(null);
+    navigate(`/discover/${postId}`);
   };
 
   return (
@@ -315,7 +312,7 @@ const Discover = () => {
                   className={`h-full bg-card/50 backdrop-blur border-border/50 hover:border-primary/50 transition-all cursor-pointer relative ${
                     !post.published ? "opacity-70 border-dashed" : ""
                   }`}
-                  onClick={() => setSelectedPost(post)}
+                  onClick={() => navigate(`/discover/${post.id}`)}
                 >
                   {!post.published && (
                     <div className="absolute top-2 right-2 z-10">
@@ -374,17 +371,7 @@ const Discover = () => {
         )}
       </main>
 
-      {/* Post Detail Modal */}
-      <PostDetailModal
-        post={selectedPost}
-        open={!!selectedPost}
-        onClose={() => setSelectedPost(null)}
-        isOwner={selectedPost ? isPostOwner(selectedPost) : false}
-        onEdit={() => selectedPost && openEditModal(selectedPost)}
-        onDelete={() => selectedPost && setDeletePostId(selectedPost.id)}
-        onToggleVisibility={() => selectedPost && handleToggleVisibility(selectedPost)}
-        onAuthorClick={() => selectedPost && openAuthorProfile(selectedPost.author, selectedPost.author_id)}
-      />
+      {/* Post Detail Modal - kept for backward compatibility but posts now open as pages */}
 
       {/* User Profile Modal */}
       <UserProfileModal
