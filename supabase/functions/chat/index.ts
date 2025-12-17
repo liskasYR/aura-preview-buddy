@@ -161,8 +161,9 @@ Deno.serve(async (req) => {
       "LPT-2.5": "google/gemini-2.5-flash",
       "LPT-3": "google/gemini-2.5-flash",
       "LPT-3.5": "google/gemini-2.5-flash",
-      "LPT-4": "google/gemini-3-pro-preview",
-      "Gemini-3-Pro": "google/gemini-3-pro-preview",
+      "LPT-4": "google/gemini-2.5-pro",
+      "LPT-4.5": "google/gemini-3-pro-preview",
+      "LPT-5": "google/gemini-3-pro-preview",
     };
 
     const actualModel = autoGenerateImage ? "google/gemini-2.5-flash" : (modelMap[model] || "google/gemini-2.5-flash");

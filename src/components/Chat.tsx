@@ -342,7 +342,7 @@ export const Chat = () => {
   }, [user]);
 
   // Models that are not available yet
-  const UNAVAILABLE_MODELS = ['LPT-4.5', 'LPT-5'];
+  const UNAVAILABLE_MODELS: string[] = [];
 
   const handleModelChange = (newModel: string) => {
     if (newModel === selectedModel) return;
@@ -1173,19 +1173,8 @@ export const Chat = () => {
                   <SelectItem value="LPT-3">LPT-3 🌐</SelectItem>
                   <SelectItem value="LPT-3.5">LPT-3.5 🚀</SelectItem>
                   <SelectItem value="LPT-4">LPT-4 ✨</SelectItem>
-                  <SelectItem value="Gemini-3-Pro">Gemini 3 Pro 🔮</SelectItem>
-                  <SelectItem value="LPT-4.5" className="text-muted-foreground">
-                    <span className="flex items-center gap-2">
-                      LPT-4.5 
-                      <span className="px-1.5 py-0.5 text-[10px] rounded bg-primary/20 text-primary font-medium">Soon</span>
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="LPT-5" className="text-muted-foreground">
-                    <span className="flex items-center gap-2">
-                      LPT-5 
-                      <span className="px-1.5 py-0.5 text-[10px] rounded bg-primary/20 text-primary font-medium">Soon</span>
-                    </span>
-                  </SelectItem>
+                  <SelectItem value="LPT-4.5">LPT-4.5 🔮</SelectItem>
+                  <SelectItem value="LPT-5">LPT-5 🚀✨</SelectItem>
                 </SelectContent>
               </Select>
               {/* Model cooldown indicator for anonymous users */}
