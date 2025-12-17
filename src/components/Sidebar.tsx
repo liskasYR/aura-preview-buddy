@@ -10,12 +10,13 @@ import {
   Palette,
   Plus,
 } from "lucide-react";
-import detaLogo from "@/assets/deta-logo.png";
+import detaLogo from "@/assets/deta-star-logo.png";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ConversationHistory } from "./ConversationHistory";
 import { useNavigate } from "react-router-dom";
 import { memo, useState, useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -117,32 +118,36 @@ export const Sidebar = memo(({
     navigate("/discover");
   };
 
-  if (!isOpen) return null;
-
   return (
-    <aside
-      className="h-screen w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 flex-shrink-0">
-        <div className="flex items-center gap-2 select-all cursor-pointer">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-            className="flex items-center justify-center"
-          >
-            <img src={detaLogo} alt="Deta Logo" className="h-8 w-8" draggable="true" />
-          </motion.div>
+    <AnimatePresence mode="wait">
+      {isOpen && (
+        <motion.aside
+          initial={{ x: -256, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -256, opacity: 0 }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          className="h-screen w-64 bg-sidebar-background border-r border-sidebar-border flex flex-col"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 flex-shrink-0">
+            <div className="flex items-center gap-2 select-all cursor-pointer">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+                className="flex items-center justify-center"
+              >
+                <img src={detaLogo} alt="Deta Logo" className="h-8 w-8 drop-shadow-[0_0_8px_hsl(280,60%,50%)]" draggable="true" />
+              </motion.div>
 
-          <h1 className="text-2xl font-bold text-foreground select-text">
-            Deta
-          </h1>
-        </div>
-      </div>
+              <h1 className="text-2xl font-bold text-foreground select-text">
+                Deta
+              </h1>
+            </div>
+          </div>
 
       {/* Navigation */}
       <div className="flex-1 flex flex-col overflow-hidden min-h-0">
@@ -307,7 +312,9 @@ export const Sidebar = memo(({
         <div className="px-2 text-xs text-center text-muted-foreground">
           Powered by LiskCell · LPT Engine
         </div>
-      </div>
-    </aside>
+        </div>
+        </motion.aside>
+      )}
+    </AnimatePresence>
   );
 });

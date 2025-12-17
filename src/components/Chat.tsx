@@ -402,6 +402,11 @@ export const Chat = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      // Set LPT-5 as default for authenticated users if no model is saved
+      if (session?.user && !localStorage.getItem('selected_model')) {
+        setSelectedModel('LPT-5');
+        saveModel('LPT-5');
+      }
     });
 
     return () => subscription.unsubscribe();
