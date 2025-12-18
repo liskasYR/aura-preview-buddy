@@ -40,13 +40,15 @@ export const ChatMessage = ({ message, index = 0 }: ChatMessageProps) => {
 
     const typingInterval = setInterval(() => {
       if (currentIndex < message.content.length) {
-        setDisplayedContent(message.content.slice(0, currentIndex + 1));
-        currentIndex++;
+        // Speed up: show 5 characters at a time for faster response
+        const charsToAdd = Math.min(5, message.content.length - currentIndex);
+        setDisplayedContent(message.content.slice(0, currentIndex + charsToAdd));
+        currentIndex += charsToAdd;
       } else {
         setIsTypingComplete(true);
         clearInterval(typingInterval);
       }
-    }, 3);
+    }, 1); // Reduced from 3ms to 1ms
 
     return () => clearInterval(typingInterval);
   }, [message.content, isUser]);

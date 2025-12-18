@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Zap, Send, Mic, X, Square, Code2, Search, Image as ImageIcon, Brain, BookOpen, Lightbulb, RefreshCw, Trash2, MicOff, Menu, Copy, Sparkles, Plus, Telescope } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
+import { ShiningText } from "./ShiningText";
 import { streamChat } from "@/lib/streamChat";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -1274,17 +1275,15 @@ export const Chat = () => {
                 className="flex items-center gap-3"
               >
                 <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
                   className={`p-2 rounded-lg bg-gradient-to-r ${currentStatus.gradient}`}
                 >
                   <currentStatus.icon className="h-5 w-5 text-white" />
                 </motion.div>
                 <div className="flex flex-col">
-                  <span className={`text-sm font-medium bg-gradient-to-r ${currentStatus.gradient} bg-clip-text text-transparent`}>
-                    {currentStatus.text}
-                  </span>
-                  <span className="text-xs text-muted-foreground">Processing your request...</span>
+                  <ShiningText text={currentStatus.text} className="text-sm font-medium" />
+                  <span className="text-xs text-muted-foreground">Processing...</span>
                 </div>
               </motion.div>
             )}
