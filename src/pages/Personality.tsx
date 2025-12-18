@@ -33,6 +33,7 @@ const personalityTypes = [
   { value: "creative", label: "🎨 Creative", description: "Imaginative and artistic" },
   { value: "analyst", label: "📊 Analyst", description: "Analytical and data-driven" },
   { value: "companion", label: "🤝 Companion", description: "Supportive and empathetic" },
+  { value: "roleplay", label: "🎭 Roleplay", description: "Character-based interactions" },
 ];
 
 const Personality = () => {
