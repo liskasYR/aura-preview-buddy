@@ -17,43 +17,56 @@ export const ImageGenerationPreview = ({
   const [loadingState, setLoadingState] = React.useState<
     "starting" | "generating" | "completed"
   >("starting");
-  const duration = 15000; // 15 seconds max
+
+  const intervalRef = React.useRef<number | null>(null);
+  const timeoutRef = React.useRef<number | null>(null);
+
+  const duration = 15000;
 
   React.useEffect(() => {
+    // reset when restarting
+    setProgress(0);
+    setLoadingState("starting");
+
     if (isComplete) {
-      setLoadingState("completed");
       setProgress(100);
+      setLoadingState("completed");
       return;
     }
 
-    const startingTimeout = setTimeout(() => {
+    timeoutRef.current = window.setTimeout(() => {
       setLoadingState("generating");
-
       const startTime = Date.now();
 
-      const interval = setInterval(() => {
-        const elapsedTime = Date.now() - startTime;
-        const progressPercentage = Math.min(95, (elapsedTime / duration) * 100);
-
-        setProgress(progressPercentage);
-
-        if (isComplete) {
-          clearInterval(interval);
-          setLoadingState("completed");
-          setProgress(100);
-        }
+      intervalRef.current = window.setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const percent = Math.min(95, (elapsed / duration) * 100);
+        setProgress(percent);
       }, 16);
-
-      return () => clearInterval(interval);
     }, 1000);
 
-    return () => clearTimeout(startingTimeout);
-  }, [duration, isComplete]);
+    return () => {
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isComplete, duration]);
 
   React.useEffect(() => {
     if (isComplete) {
-      setLoadingState("completed");
       setProgress(100);
+      setLoadingState("completed");
+
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     }
   }, [isComplete]);
 
@@ -78,19 +91,16 @@ export const ImageGenerationPreview = ({
           loadingState === "completed" && "border-primary/30"
         )}
       >
-        {/* Progress bar */}
         {loadingState !== "completed" && (
           <div className="absolute top-0 left-0 right-0 h-1 bg-muted/30">
             <motion.div
               className="h-full bg-gradient-to-r from-primary via-secondary to-primary"
-              initial={{ width: "0%" }}
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
             />
           </div>
         )}
 
-        {/* Content area */}
         <div className="p-4">
           {children ? (
             <motion.div
