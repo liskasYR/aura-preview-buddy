@@ -9,11 +9,15 @@ interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  timestamp: Date;
+  timestamp: Date | string;
   images?: string[];
-  generatedImages?: string[]; // AI-generated images
+  generatedImages?: string[];
   isTyping?: boolean;
-  sources?: Array<{ title: string; link: string; snippet: string }>;
+  sources?: Array<{
+    title: string;
+    link: string;
+    snippet: string;
+  }>;
 }
 
 interface ChatMessageProps {
@@ -27,31 +31,29 @@ export const ChatMessage = ({ message, index = 0 }: ChatMessageProps) => {
   const [isTypingComplete, setIsTypingComplete] = useState(isUser);
 
   useEffect(() => {
-    if (isUser) {
+    if (isUser || message.isTyping === false) {
       setDisplayedContent(message.content);
       setIsTypingComplete(true);
       return;
     }
 
-    // Typing animation for assistant
     let currentIndex = 0;
     setDisplayedContent("");
     setIsTypingComplete(false);
 
     const typingInterval = setInterval(() => {
       if (currentIndex < message.content.length) {
-        // Speed up: show 5 characters at a time for faster response
-        const charsToAdd = Math.min(5, message.content.length - currentIndex);
-        setDisplayedContent(message.content.slice(0, currentIndex + charsToAdd));
+        const charsToAdd = Math.min(4, message.content.length - currentIndex);
         currentIndex += charsToAdd;
+        setDisplayedContent(message.content.slice(0, currentIndex));
       } else {
         setIsTypingComplete(true);
         clearInterval(typingInterval);
       }
-    }, 1); // Reduced from 3ms to 1ms
+    }, 10);
 
     return () => clearInterval(typingInterval);
-  }, [message.content, isUser]);
+  }, [message.id, message.content, message.isTyping, isUser]);
 
   return (
     <motion.div
@@ -63,16 +65,16 @@ export const ChatMessage = ({ message, index = 0 }: ChatMessageProps) => {
         isUser ? "flex-row-reverse" : "flex-row"
       )}
     >
-      <motion.div
-        whileHover={{ scale: 1.1 }}
-        transition={{ duration: 0.2 }}
-      >
-        <Avatar className={cn(
-          "h-8 w-8 md:h-10 md:w-10 shrink-0 border-2",
-          isUser 
-            ? "bg-card border-muted" 
-            : "gradient-primary border-primary shadow-neon"
-        )}>
+      {/* Avatar */}
+      <motion.div whileHover={{ scale: 1.1 }} transition={{ duration: 0.2 }}>
+        <Avatar
+          className={cn(
+            "h-8 w-8 md:h-10 md:w-10 shrink-0 border-2",
+            isUser
+              ? "bg-card border-muted"
+              : "gradient-primary border-primary shadow-neon"
+          )}
+        >
           <AvatarFallback>
             {isUser ? (
               <User className="h-4 w-4 md:h-5 md:w-5" />
@@ -83,6 +85,7 @@ export const ChatMessage = ({ message, index = 0 }: ChatMessageProps) => {
         </Avatar>
       </motion.div>
 
+      {/* Message bubble */}
       <motion.div
         initial={{ opacity: 0, x: isUser ? 20 : -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -94,13 +97,19 @@ export const ChatMessage = ({ message, index = 0 }: ChatMessageProps) => {
             : "bg-card/40 border border-primary/30 glow-border shadow-glow"
         )}
       >
-        <div className={cn("text-sm prose prose-invert max-w-none", isUser ? "text-right" : "text-left")}>
+        {/* Text */}
+        <div
+          className={cn(
+            "text-sm prose prose-invert max-w-none",
+            isUser ? "text-right" : "text-left"
+          )}
+        >
           {isUser ? (
             <p className="whitespace-pre-wrap">{message.content}</p>
           ) : (
             <>
               <MarkdownContent content={displayedContent} />
-              {!isTypingComplete && (
+              {!isTypingComplete && displayedContent.length > 0 && (
                 <motion.span
                   animate={{ opacity: [1, 0, 1] }}
                   transition={{ duration: 0.8, repeat: Infinity }}
@@ -112,115 +121,77 @@ export const ChatMessage = ({ message, index = 0 }: ChatMessageProps) => {
             </>
           )}
         </div>
-        
-        {/* User uploaded images - no watermark */}
+
+        {/* User uploaded images */}
         {message.images && message.images.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-3 md:mt-4 space-y-2 md:space-y-3"
-          >
+          <div className="mt-3 space-y-2">
             {message.images.map((img, idx) => (
-              <motion.div
+              <motion.img
                 key={idx}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: idx * 0.1 }}
-                className="relative group"
-              >
-                <motion.img
-                  src={img}
-                  alt={`Uploaded ${idx + 1}`}
-                  whileHover={{ scale: 1.02 }}
-                  className="rounded-lg md:rounded-xl max-w-[200px] md:max-w-[280px] max-h-[200px] md:max-h-[280px] object-cover border border-muted/50"
-                />
-              </motion.div>
+                src={img}
+                alt={`Uploaded ${idx + 1}`}
+                whileHover={{ scale: 1.02 }}
+                className="rounded-lg max-w-[280px] max-h-[280px] object-cover border border-muted/50"
+              />
             ))}
-          </motion.div>
+          </div>
         )}
 
-        {/* AI Generated images - with watermark */}
+        {/* AI generated images */}
         {message.generatedImages && message.generatedImages.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-3 md:mt-4 space-y-2 md:space-y-3"
-          >
+          <div className="mt-3 space-y-3">
             {message.generatedImages.map((img, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, scale: 0.5, rotateY: -90 }}
-                animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-                transition={{ 
-                  duration: 0.8, 
-                  delay: idx * 0.2,
-                  type: "spring",
-                  stiffness: 100
-                }}
-                className="relative group"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: idx * 0.15 }}
+                className="relative"
               >
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary-glow/20 to-primary/20 rounded-lg md:rounded-xl blur-lg md:blur-xl"
-                  animate={{ 
-                    opacity: [0.5, 1, 0.5],
-                    scale: [1, 1.05, 1]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
                 <motion.img
                   src={img}
                   alt={`Generated ${idx + 1}`}
-                  initial={{ opacity: 0, filter: "blur(20px) brightness(0.5)" }}
-                  animate={{ opacity: 1, filter: "blur(0px) brightness(1)" }}
                   whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.8, delay: idx * 0.2 + 0.3 }}
-                  className="relative rounded-lg md:rounded-xl max-w-[200px] md:max-w-[320px] max-h-[200px] md:max-h-[320px] object-contain border border-primary/40 md:border-2 shadow-neon"
+                  className="rounded-xl max-w-[320px] max-h-[320px] object-contain border-2 border-primary/40 shadow-neon"
                 />
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.2 + 0.8 }}
-                  className="mt-1.5 md:mt-2 text-[10px] md:text-xs text-center text-primary/70 font-medium"
-                >
+                <p className="mt-1 text-xs text-center text-primary/70">
                   ✨ Created by Deta AI
-                </motion.div>
+                </p>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         )}
 
+        {/* Sources */}
         {message.sources && message.sources.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            className="mt-4 pt-4 border-t border-primary/20"
-          >
-            <p className="text-xs font-semibold text-primary mb-2">📚 Sources:</p>
+          <div className="mt-4 pt-4 border-t border-primary/20">
+            <p className="text-xs font-semibold text-primary mb-2">
+              📚 Sources
+            </p>
             <div className="space-y-2">
               {message.sources.map((source, idx) => (
-                <motion.a
+                <a
                   key={idx}
                   href={source.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: idx * 0.1 }}
-                  className="block p-2 rounded-lg bg-card/40 border border-primary/20 hover:border-primary/40 transition-smooth hover:bg-card/60"
+                  className="block p-2 rounded-lg bg-card/40 border border-primary/20 hover:border-primary/40 transition"
                 >
-                  <p className="text-xs font-medium text-primary truncate">{source.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{source.snippet}</p>
-                </motion.a>
+                  <p className="text-xs font-medium text-primary truncate">
+                    {source.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {source.snippet}
+                  </p>
+                </a>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
-        
+
+        {/* Timestamp */}
         <p className="mt-3 text-xs text-muted-foreground/70">
-          {message.timestamp.toLocaleTimeString("he-IL", {
+          {new Date(message.timestamp).toLocaleTimeString("he-IL", {
             hour: "2-digit",
             minute: "2-digit",
           })}
