@@ -16,6 +16,7 @@ import { Sidebar } from "./Sidebar";
 import { ImageLibrary } from "./ImageLibrary";
 import { NewPostNotification, hasSeenPost } from "./NewPostNotification";
 import { WaitlistModal } from "./WaitlistModal";
+import MaintenanceModal from "./MaintenanceModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -1502,6 +1503,9 @@ export const Chat = () => {
         modelName={waitlistModal.modelName}
         onClose={() => setWaitlistModal({ isOpen: false, modelName: "" })}
       />
+
+      {/* Maintenance Modal */}
+      <MaintenanceModal isOpen={true} />
     </div>
   );
 };
