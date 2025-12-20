@@ -193,6 +193,7 @@ export const Chat = () => {
     isOpen: false,
     modelName: ""
   });
+  const [aiBalanceExhausted, setAiBalanceExhausted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -775,7 +776,13 @@ export const Chat = () => {
           }
         },
         onError: (error) => {
-          toast.error(error);
+          // Check if error indicates AI balance exhausted
+          const errorLower = error.toLowerCase();
+          if (errorLower.includes('quota') || errorLower.includes('limit') || errorLower.includes('balance') || errorLower.includes('exhausted') || errorLower.includes('exceeded') || errorLower.includes('insufficient')) {
+            setAiBalanceExhausted(true);
+          } else {
+            toast.error(error);
+          }
           setIsLoading(false);
           setDetaStatus(null);
           abortControllerRef.current = null;
@@ -1504,8 +1511,8 @@ export const Chat = () => {
         onClose={() => setWaitlistModal({ isOpen: false, modelName: "" })}
       />
 
-      {/* Maintenance Modal */}
-      <MaintenanceModal isOpen={true} />
+      {/* Maintenance Modal - Shows when AI Balance is exhausted */}
+      <MaintenanceModal isOpen={aiBalanceExhausted} onClose={() => setAiBalanceExhausted(false)} />
     </div>
   );
 };
