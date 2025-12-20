@@ -23,7 +23,7 @@ const MaintenanceModal = ({ isOpen, onClose }: MaintenanceModalProps) => {
           </div>
           
           <h2 className="text-xl font-bold text-foreground">
-            נגמר ה-AI Balance!
+            יצאנו לחופשה קצרה!
           </h2>
           
           <p className="text-muted-foreground max-w-sm leading-relaxed">
