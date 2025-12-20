@@ -34,6 +34,10 @@ const MaintenanceModal = ({ isOpen, onClose }: MaintenanceModalProps) => {
             <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <span>אנחנו תמיד פה 💜</span>
           </div>
+          
+          <p className="text-xs text-muted-foreground mt-2">
+            חוזרים ב-1/1/26
+          </p>
         </div>
       </DialogContent>
     </Dialog>
