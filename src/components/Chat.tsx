@@ -1511,8 +1511,8 @@ export const Chat = () => {
         onClose={() => setWaitlistModal({ isOpen: false, modelName: "" })}
       />
 
-      {/* Maintenance Modal - Shows when AI Balance is exhausted */}
-      <MaintenanceModal isOpen={aiBalanceExhausted} onClose={() => setAiBalanceExhausted(false)} />
+      {/* Maintenance Modal */}
+      <MaintenanceModal isOpen={true} />
     </div>
   );
 };
