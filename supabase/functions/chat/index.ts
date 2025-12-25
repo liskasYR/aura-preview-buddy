@@ -154,6 +154,9 @@ Deno.serve(async (req) => {
     console.log("Image check:", { autoGenerateImage, wantsImageEditing, hasImages, lastMessageText: lastMessageText.substring(0, 100) });
 
     // Map LPT models to Lovable AI models
+    // Check if LPT-5.5 is available (after January 1, 2026)
+    const isLpt55Available = new Date() >= new Date('2026-01-01');
+    
     const modelMap: Record<string, string> = {
       "LPT-1": "google/gemini-2.5-flash-lite",
       "LPT-1.5": "google/gemini-2.5-flash-lite",
@@ -164,7 +167,7 @@ Deno.serve(async (req) => {
       "LPT-4": "google/gemini-2.5-pro",
       "LPT-4.5": "google/gemini-3-pro-preview",
       "LPT-5": "google/gemini-3-pro-preview",
-      "LPT-5.5": "google/gemini-3-pro-preview",
+      "LPT-5.5": isLpt55Available ? "google/gemini-3-pro-flash" : "google/gemini-3-pro-preview",
     };
 
     const actualModel = autoGenerateImage ? "google/gemini-2.5-flash" : (modelMap[model] || "google/gemini-2.5-flash");
@@ -265,7 +268,7 @@ ${detaProfile.instructions.responses.liskasYR}
 - **LPT-3.5** — The latest generation of LiskCell models with context memory, image generation, creative thinking, and especially natural responses.
 - **LPT-4** — Powered by Gemini-3-pro-preview with enhanced creativity, better reasoning, superior image understanding, and breakthrough performance.
 - **LPT-5** — Advanced flagship model with superior reasoning and deep understanding.
-- **LPT-5.5** — THE NEWEST! Our most advanced model with breakthrough performance, ultimate creativity, and unmatched intelligence. Available from January 2026!
+- **LPT-5.5** — ${isLpt55Available ? "THE NEWEST! Our most advanced model powered by Gemini-3-pro-flash with breakthrough performance, ultimate creativity, and unmatched intelligence." : "Coming January 2026! Our most advanced model with breakthrough performance."}
 
 📰 **Discover Updates Knowledge:**
 - You have access to information about the latest posts from the Discover section

@@ -194,6 +194,12 @@ export const Chat = () => {
     modelName: ""
   });
   const [aiBalanceExhausted, setAiBalanceExhausted] = useState(false);
+  
+  // Check if LPT-5.5 is available (after January 1, 2026)
+  const isLpt55Available = new Date() >= new Date('2026-01-01');
+  
+  // Maintenance modal should show only if AI balance exhausted AND before January 1, 2026
+  const showMaintenanceModal = aiBalanceExhausted && !isLpt55Available;
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -344,8 +350,8 @@ export const Chat = () => {
     };
   }, [user]);
 
-  // Models that are not available yet
-  const UNAVAILABLE_MODELS: string[] = [];
+  // Models that are not available yet (LPT-5.5 available after Jan 1, 2026)
+  const UNAVAILABLE_MODELS: string[] = isLpt55Available ? [] : ['LPT-5.5'];
 
   const handleModelChange = (newModel: string) => {
     if (newModel === selectedModel) return;
@@ -1514,9 +1520,9 @@ export const Chat = () => {
         onClose={() => setWaitlistModal({ isOpen: false, modelName: "" })}
       />
 
-      {/* Maintenance Modal - only show for rate limits after Jan 1, 2026 */}
+      {/* Maintenance Modal - only show for rate limits BEFORE Jan 1, 2026 */}
       <MaintenanceModal 
-        isOpen={aiBalanceExhausted && new Date() >= new Date('2026-01-01')} 
+        isOpen={showMaintenanceModal} 
         onClose={() => setAiBalanceExhausted(false)}
       />
     </div>
