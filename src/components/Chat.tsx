@@ -562,7 +562,7 @@ export const Chat = () => {
       
       if (msgError) throw msgError;
       
-      // Auto-generate smart title from first user message
+      // Auto-generate smart title from first user message using AI
       if (message.role === 'user') {
         const { data: messages, error: fetchError } = await supabase
           .from('messages')
@@ -574,35 +574,38 @@ export const Chat = () => {
           
           // Only update title for the first user message
           if (userMessages.length === 1) {
-            const generateTitle = (content: string): string => {
-              // Remove common phrases and clean the text
-              let title = content
-                .replace(/^(hi|hello|hey|שלום|היי|מה נשמע|מה קורה)/gi, '')
-                .trim();
+            try {
+              // Use AI to generate a smart title
+              const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-title`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                },
+                body: JSON.stringify({ message: message.content }),
+              });
               
-              // Take first meaningful sentence or phrase
-              const firstSentence = title.split(/[.!?]/)[0].trim();
-              if (firstSentence.length > 0) {
-                title = firstSentence;
-              }
+              const data = await response.json();
+              const smartTitle = data.title || message.content.substring(0, 30) || 'צ\'אט חדש';
               
-              // Limit length
-              if (title.length > 50) {
-                title = title.substring(0, 50) + '...';
-              }
-              
-              return title || 'New Chat';
-            };
-            
-            const smartTitle = generateTitle(message.content);
-            
-            await supabase
-              .from('conversations')
-              .update({
-                title: smartTitle,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', currentConversationId);
+              await supabase
+                .from('conversations')
+                .update({
+                  title: smartTitle,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', currentConversationId);
+            } catch (titleError) {
+              console.error('Error generating title:', titleError);
+              // Fallback to simple title
+              await supabase
+                .from('conversations')
+                .update({
+                  title: message.content.substring(0, 30) || 'צ\'אט חדש',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', currentConversationId);
+            }
           } else {
             // Just update timestamp for subsequent messages
             await supabase
@@ -1511,8 +1514,11 @@ export const Chat = () => {
         onClose={() => setWaitlistModal({ isOpen: false, modelName: "" })}
       />
 
-      {/* Maintenance Modal */}
-      <MaintenanceModal isOpen={true} />
+      {/* Maintenance Modal - only show for rate limits after Jan 1, 2026 */}
+      <MaintenanceModal 
+        isOpen={aiBalanceExhausted && new Date() >= new Date('2026-01-01')} 
+        onClose={() => setAiBalanceExhausted(false)}
+      />
     </div>
   );
 };

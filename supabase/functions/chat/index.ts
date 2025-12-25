@@ -164,6 +164,7 @@ Deno.serve(async (req) => {
       "LPT-4": "google/gemini-2.5-pro",
       "LPT-4.5": "google/gemini-3-pro-preview",
       "LPT-5": "google/gemini-3-pro-preview",
+      "LPT-5.5": "google/gemini-3-pro-preview",
     };
 
     const actualModel = autoGenerateImage ? "google/gemini-2.5-flash" : (modelMap[model] || "google/gemini-2.5-flash");
@@ -262,7 +263,9 @@ ${detaProfile.instructions.responses.liskasYR}
 - **LPT-2.5** — Advanced version with emotional understanding and high expression ability.
 - **LPT-3** — Advanced model with deep understanding, support for complex content and high creative ability.
 - **LPT-3.5** — The latest generation of LiskCell models with context memory, image generation, creative thinking, and especially natural responses.
-- **LPT-4** — THE LATEST! Powered by Gemini-3-pro-preview with enhanced creativity, better reasoning, superior image understanding, and breakthrough performance. Now available!
+- **LPT-4** — Powered by Gemini-3-pro-preview with enhanced creativity, better reasoning, superior image understanding, and breakthrough performance.
+- **LPT-5** — Advanced flagship model with superior reasoning and deep understanding.
+- **LPT-5.5** — THE NEWEST! Our most advanced model with breakthrough performance, ultimate creativity, and unmatched intelligence. Available from January 2026!
 
 📰 **Discover Updates Knowledge:**
 - You have access to information about the latest posts from the Discover section
@@ -370,7 +373,19 @@ Always maintain these standards in your responses! 🚀`;
       console.log("Image generation response:", JSON.stringify(imageData).substring(0, 500));
       
       const textContent = imageData.choices?.[0]?.message?.content || "הנה התמונה שיצרתי עבורך!";
-      const generatedImages = imageData.choices?.[0]?.message?.images || [];
+      const rawImages = imageData.choices?.[0]?.message?.images || [];
+      
+      // Extract base64 URLs from the images array
+      const generatedImages: string[] = [];
+      for (const img of rawImages) {
+        if (img?.image_url?.url) {
+          generatedImages.push(img.image_url.url);
+        } else if (typeof img === 'string') {
+          generatedImages.push(img);
+        }
+      }
+      
+      console.log("Processed images count:", generatedImages.length);
       
       // Build SSE response with text and images
       const encoder = new TextEncoder();
@@ -387,7 +402,7 @@ Always maintain these standards in your responses! 🚀`;
             choices: [{ delta: { content: textContent } }]
           })}\n\n`));
           
-          // Send generated images
+          // Send generated images as simple URL strings
           if (generatedImages.length > 0) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({
               choices: [{ delta: { images: generatedImages } }]
